@@ -24,6 +24,7 @@ import {
   ElSwitch,
   ElPopover,
   ElDropdown,
+  ElMessage,
   ElAffix,
 } from 'element-plus'
 import 'element-plus/dist/index.css'
@@ -47,6 +48,7 @@ const components = [
   ElMenu.MenuItem,
 
   ElInput,
+  ElMessage,
   ElCard,
   ElForm,
   ElForm.FormItem,

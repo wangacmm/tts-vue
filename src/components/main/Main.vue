@@ -1,227 +1,42 @@
 <template>
   <div class='main'>
     <el-tabs tab-position='left' style='width: 100%;height: 100%' class='demo-tabs'>
-      <el-tab-pane label='号码分类' class='xxx'>
-        <FenLei/>
+      <el-tab-pane label='按运营商分类'>
+        <Sort :dir='dir' />
       </el-tab-pane>
-      <el-tab-pane label='错号排查'>错号排查</el-tab-pane>
+      <el-tab-pane label='过滤错号'>
+      </el-tab-pane>
       <el-tab-pane label='号码去重'>号码去重</el-tab-pane>
       <el-tab-pane label='号码对比'>号码对比</el-tab-pane>
     </el-tabs>
-    <div class='input-area' v-show="page.asideIndex == '11'">
-      <!--      <div class='menu'>-->
-      <!--        <el-menu-->
-      <!--          mode='horizontal'-->
-      <!--          @select='tabChange'-->
-      <!--          default-active='1'-->
-      <!--          :ellipsis='false'-->
-      <!--        >-->
-      <!--          <el-menu-item index='1'>文本</el-menu-item>-->
-      <!--          <el-menu-item index='2'>SSML</el-menu-item>-->
-      <!--        </el-menu>-->
-      <!--      </div>-->
-      <div class='text-area' v-show="page.tabIndex == '11'">
-        <el-input
-          v-model='inputs.inputValue'
-          type='textarea'
-          placeholder='Please input'
-        />
-      </div>
-      <div class='text-area2' v-show="page.tabIndex == '2'">
-        <el-input v-model='inputs.ssmlValue' type='textarea' />
-      </div>
-    </div>
-    <div class='input-area' v-show="page.asideIndex == '2'">
-      <el-table
-        v-loading='loading'
-        :data='tableData'
-        height='calc(100vh - 170px)'
-        style='width: 100%'
-      >
-        <el-table-column
-          prop='fileName'
-          label='文件名'
-          show-overflow-tooltip='true'
-        />
-        <el-table-column
-          prop='filePath'
-          label='文件路径'
-          show-overflow-tooltip='true'
-        />
-        <el-table-column
-          prop='fileSize'
-          label='字数'
-          width='60'
-          show-overflow-tooltip='true'
-        />
-        <el-table-column prop='status' label='状态' width='60'>
-          <template #default='scope'>
-            <div>
-              <el-tag
-                class='ml-2'
-                :type="scope.row.status == 'ready' ? 'info' : 'success'"
-              >{{ scope.row.status }}
-              </el-tag
-              >
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label='操作'>
-          <template #default='scope'>
-            <template v-if="scope.row.status == 'ready'">
-              <el-button
-                size='small'
-                type='danger'
-                @click='handleDelete(scope.$index, scope.row)'
-              >移除
-              </el-button
-              >
-            </template>
-            <template v-else>
-              <el-button
-                size='small'
-                type='warning'
-                @click='play(scope.row)'
-                circle
-              >
-                <el-icon>
-                  <CaretRight />
-                </el-icon
-                >
-              </el-button>
-              <el-button size='small' @click='openInFolder(scope.row)' circle
-              >
-                <el-icon>
-                  <FolderOpened />
-                </el-icon
-                >
-              </el-button>
-            </template>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class='table-tool'>
-        <el-upload
-          ref='uploadRef'
-          :auto-upload='false'
-          :on-change='fileChange'
-          :on-remove='fileRemove'
-          show-file-list='false'
-          accept='.txt'
-          multiple
-        >
-          <template #trigger>
-            <el-button type='primary'>选择文件</el-button>
-          </template>
-
-          <template #tip>
-            <div class='el-upload__tip'>文本格式为： *.txt</div>
-          </template>
-        </el-upload>
-        <el-button type='warning' @click='clearAll'
-        >
-          <el-icon>
-            <DeleteFilled />
-          </el-icon>
-          清空
-        </el-button
-        >
-      </div>
-    </div>
-    <!-- <MainOptions v-show="page.asideIndex != '3'"></MainOptions> -->
-    <div class='main-config-page' v-if="page.asideIndex == '3'">
-      <ConfigPage></ConfigPage>
-    </div>
-
   </div>
 </template>
 
 <script setup lang='ts'>
-  import MainOptions from './MainOptions.vue'
-  import ConfigPage from '../configpage/ConfigPage.vue'
-  import FenLei from './fenlei.vue'
+  import Sort from './Sort.vue'
+  import { onMounted } from 'vue'
 
-  import { ref, watch } from 'vue'
-  import type { UploadInstance, UploadProps, UploadUserFile } from 'element-plus'
-  import { useTtsStore } from '@/store/store'
-  import { storeToRefs } from 'pinia'
-  const loading = ref(true)
-  const { shell } = require('electron')
-  var path = require('path')
-  const store = useTtsStore()
-  const { inputs, page, tableData, currMp3Url, config, formConfig, audioPlayer } =
-    storeToRefs(store)
+  const path = require('path')
+  const fs = require('fs')
+  const homedir = require('os').homedir()
 
-  // SSML内容和文本框内容同步
-  watch(
-    () => inputs.value.inputValue,
-    (newValue) => {
-      store.setSSMLValue(newValue)
-    }
-  )
-
-  const tabChange = (index: number) => {
-    page.value.tabIndex = index.toString()
-  }
-  const uploadRef = ref<UploadInstance>()
-
-  const handleDelete = (index: any, row: any) => {
-    uploadRef.value!.handleRemove(row.file)
-  }
-
-  const fileChange = (uploadFile: any, uploadFiles: any) => {
-    tableData.value = uploadFiles.map((item: any) => {
-      return {
-        fileName: item.name,
-        filePath: item.raw.path,
-        fileSize: item.size,
-        status: item.status,
-        file: item
+  const dir = path.join(homedir, 'Desktop', '号码立方')
+  onMounted(() => {
+    //创建导出目录
+    fs.readdir(dir, (err) => {
+      if (err) {
+        fs.mkdir(dir, function(err) {
+          if (err) {
+            return console.error(err)
+          }
+        })
       }
     })
-  }
-  const fileRemove = (uploadFile: any, uploadFiles: any) => {
-    tableData.value = uploadFiles.map((item: any) => {
-      return {
-        fileName: item.name,
-        filePath: item.raw.path,
-        fileSize: item.size,
-        status: item.status,
-        file: item
-      }
-    })
-  }
+  })
 
-  const clearAll = () => {
-    tableData.value = []
-    uploadRef.value!.clearFiles()
-  }
-
-  const play = (val: any) => {
-    if (audioPlayer.value) {
-      (audioPlayer.value as any).src = path.join(
-        config.value.savePath,
-        val.fileName.split(path.extname(val.fileName))[0] + '.mp3'
-      );
-      (audioPlayer.value as any).play()
-    } else {
-      currMp3Url.value = path.join(
-        config.value.savePath,
-        val.fileName.split(path.extname(val.fileName))[0] + '.mp3'
-      )
-    }
-  }
-  const openInFolder = (val: any) => {
-    shell.showItemInFolder(
-      path.join(
-        config.value.savePath,
-        val.fileName.split(path.extname(val.fileName))[0] + '.mp3'
-      )
-    )
-  }
 </script>
 
-<style scoped>
+<style>
     .main {
         height: calc(100vh - 35px);
         background-color: #fff;
@@ -245,6 +60,9 @@
 
     .table-tool {
         margin-top: 10px;
+        margin-right: 10px;
+        display: flex;
+        justify-content: space-between;
     }
 
     .menu .el-menu {
@@ -284,4 +102,7 @@
         border: medium none;
     }
 
+    .el-upload__tip {
+        color: #909399;
+    }
 </style>
