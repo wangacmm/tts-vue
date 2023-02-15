@@ -5,15 +5,23 @@
         <Sort :dir='dir' />
       </el-tab-pane>
       <el-tab-pane label='过滤错号'>
+        <Filter :dir='dir' />
       </el-tab-pane>
-      <el-tab-pane label='号码去重'>号码去重</el-tab-pane>
-      <el-tab-pane label='号码对比'>号码对比</el-tab-pane>
+      <el-tab-pane label='号码去重'>
+        <Repeat :dir='dir' />
+      </el-tab-pane>
+      <el-tab-pane label='号码对比'>
+        <Compare :dir='dir' />
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
 
 <script setup lang='ts'>
   import Sort from './Sort.vue'
+  import Filter from './Filter.vue'
+  import Repeat from './Repeat.vue'
+  import Compare from './Compare.vue'
   import { onMounted } from 'vue'
 
   const path = require('path')

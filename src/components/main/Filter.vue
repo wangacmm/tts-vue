@@ -62,7 +62,7 @@
           <span class='el-upload__tip'>一行一个号码,或用','分开</span>
         </template>
       </el-upload>
-      <el-button type='primary' @click='sortMobile'>立即分类</el-button>
+      <el-button type='primary' @click='sortMobile'>开始过滤</el-button>
     </div>
     <h3>结果导出</h3>
     <el-table
@@ -109,7 +109,7 @@
   import { ElMessage } from 'element-plus'
   import { ElLoading } from 'element-plus'
   import { ref } from 'vue'
-  import { sort, openInFolder, getTimestamp, write } from './util'
+  import { isMobile, openInFolder, getTimestamp, write } from './util'
   import { UploadInstance } from 'element-plus'
   import fs from 'fs'
   import path from 'path'
@@ -164,56 +164,31 @@
       data = data.replaceAll('\n', ',')
       let arr = data.split(',')
       let err: string[] = []
-      let yd: string[] = []
-      let lt: string[] = []
-      let dx: string[] = []
+      let normal: string[] = []
       for (let i = 0; i < arr.length; i++) {
         let mobile = arr[i]
-        switch (sort(mobile)) {
-          case 1:
-            yd.push(mobile)
-            break
-          case 2:
-            lt.push(mobile)
-            break
-          case 3:
-            dx.push(mobile)
-            break
-          default:
-            err.push(mobile)
-            break
+        if(isMobile(mobile)){
+          normal.push(mobile)
+        }else {
+          err.push(mobile)
         }
       }
       const timestamp = getTimestamp()
 
-      write(path.join(<string>props.dir, timestamp + '移动.txt'), yd.join('\n'))
-      write(path.join(<string>props.dir, timestamp + '联通.txt'), lt.join('\n'))
-      write(path.join(<string>props.dir, timestamp + '电信.txt'), dx.join('\n'))
-      write(path.join(<string>props.dir, timestamp + '未知.txt'), err.join('\n'))
+      write(path.join(<string>props.dir, timestamp + '正常.txt'), normal.join('\n'))
+      write(path.join(<string>props.dir, timestamp + '错号.txt'), err.join('\n'))
       ElMessage.success('操作成功')
 
       results.value = [
         {
-          fileName: '移动.txt',
-          filePath: path.join(<string>props.dir, timestamp + '移动.txt'),
-          fileSize: yd.length,
+          fileName: '正常.txt',
+          filePath: path.join(<string>props.dir, timestamp + '正常.txt'),
+          fileSize: normal.length,
           status: 'ok'
         },
         {
-          fileName: '联通.txt',
-          filePath: path.join(<string>props.dir, timestamp + '联通.txt'),
-          fileSize: lt.length,
-          status: 'ok'
-        },
-        {
-          fileName: '电信.txt',
-          filePath: path.join(<string>props.dir, timestamp + '电信.txt'),
-          fileSize: dx.length,
-          status: 'ok'
-        },
-        {
-          fileName: '未知.txt',
-          filePath: path.join(<string>props.dir, timestamp + '未知.txt'),
+          fileName: '错号.txt',
+          filePath: path.join(<string>props.dir, timestamp + '错号.txt'),
           fileSize: err.length,
           status: 'ok'
         }]

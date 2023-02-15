@@ -48,7 +48,7 @@
         :auto-upload='false'
         :on-change='fileChange'
         :on-remove='fileRemove'
-        :limit='1'
+        :limit='2'
         :show-file-list='false'
         accept='.csv,.txt'
         size='small'
@@ -62,7 +62,7 @@
           <span class='el-upload__tip'>一行一个号码,或用','分开</span>
         </template>
       </el-upload>
-      <el-button type='primary' @click='sortMobile'>立即分类</el-button>
+      <el-button type='primary' @click='sortMobile'>开始对比</el-button>
     </div>
     <h3>结果导出</h3>
     <el-table
@@ -109,7 +109,7 @@
   import { ElMessage } from 'element-plus'
   import { ElLoading } from 'element-plus'
   import { ref } from 'vue'
-  import { sort, openInFolder, getTimestamp, write } from './util'
+  import { isMobile, openInFolder, getTimestamp, write } from './util'
   import { UploadInstance } from 'element-plus'
   import fs from 'fs'
   import path from 'path'
@@ -150,8 +150,11 @@
   }
 
   const sortMobile = () => {
-    if (files.value.length === 0) {
-      return ElMessage.warning('请导入文件')
+    if (files.value.length < 2) {
+      return ElMessage.error('请导入需要对比的两个文件')
+    }
+    if (files.value[0]['filePath'] === files.value[1]['filePath']) {
+      return ElMessage.error('请导入不同的文件')
     }
     results.value = []
     const loading = ElLoading.service({
@@ -160,63 +163,42 @@
       background: 'rgba(0, 0, 0, 0.5)'
     })
     setTimeout(() => {
-      let data = fs.readFileSync(files.value[0]['filePath']).toString()
-      data = data.replaceAll('\n', ',')
-      let arr = data.split(',')
-      let err: string[] = []
-      let yd: string[] = []
-      let lt: string[] = []
-      let dx: string[] = []
-      for (let i = 0; i < arr.length; i++) {
-        let mobile = arr[i]
-        switch (sort(mobile)) {
-          case 1:
-            yd.push(mobile)
-            break
-          case 2:
-            lt.push(mobile)
-            break
-          case 3:
-            dx.push(mobile)
-            break
-          default:
-            err.push(mobile)
-            break
-        }
-      }
+      let data1 = fs.readFileSync(files.value[0]['filePath']).toString()
+      data1 = data1.replaceAll('\n', ',')
+      let arr1 = data1.split(',')
+      let data2 = fs.readFileSync(files.value[0]['filePath']).toString()
+      data2 = data2.replaceAll('\n', ',')
+      let arr2 = data2.split(',')
+      let intersect = arr1.filter(v => arr2.includes(v))
+      let minus1 = arr1.filter(v => !arr2.includes(v))
+      let minus2 = arr2.filter(v => !arr1.includes(v))
       const timestamp = getTimestamp()
 
-      write(path.join(<string>props.dir, timestamp + '移动.txt'), yd.join('\n'))
-      write(path.join(<string>props.dir, timestamp + '联通.txt'), lt.join('\n'))
-      write(path.join(<string>props.dir, timestamp + '电信.txt'), dx.join('\n'))
-      write(path.join(<string>props.dir, timestamp + '未知.txt'), err.join('\n'))
+      write(path.join(<string>props.dir, timestamp + '交集.txt'), intersect.join('\n'))
+      write(path.join(<string>props.dir, timestamp + '文件1和2差集.txt'), minus1.join('\n'))
+      write(path.join(<string>props.dir, timestamp + '文件2和1差集.txt'), minus2.join('\n'))
       ElMessage.success('操作成功')
 
       results.value = [
         {
-          fileName: '移动.txt',
-          filePath: path.join(<string>props.dir, timestamp + '移动.txt'),
-          fileSize: yd.length,
+          fileName: '交集.txt',
+          filePath: path.join(<string>props.dir, timestamp + '交集.txt'),
+          fileSize: intersect.length,
           status: 'ok'
         },
         {
-          fileName: '联通.txt',
-          filePath: path.join(<string>props.dir, timestamp + '联通.txt'),
-          fileSize: lt.length,
+          fileName: '文件1和2差集.txt',
+          filePath: path.join(<string>props.dir, timestamp + '文件1和2差集.txt'),
+          fileSize: minus1.length,
           status: 'ok'
         },
         {
-          fileName: '电信.txt',
-          filePath: path.join(<string>props.dir, timestamp + '电信.txt'),
-          fileSize: dx.length,
+          fileName: '文件2和1差集.txt',
+          filePath: path.join(<string>props.dir, timestamp + '文件2和1差集.txt'),
+          fileSize: minus2.length,
           status: 'ok'
-        },
-        {
-          fileName: '未知.txt',
-          filePath: path.join(<string>props.dir, timestamp + '未知.txt'),
-          fileSize: err.length,
-          status: 'ok'
-        }]
+        }
+      ]
       loading.close()
     }, 1000)
   }
