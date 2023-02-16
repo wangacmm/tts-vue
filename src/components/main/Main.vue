@@ -13,6 +13,9 @@
       <el-tab-pane label='号码对比'>
         <Compare :dir='dir' />
       </el-tab-pane>
+      <el-tab-pane label='按地区导出'>
+        <Location :dir='dir' />
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -22,6 +25,7 @@
   import Filter from './Filter.vue'
   import Repeat from './Repeat.vue'
   import Compare from './Compare.vue'
+  import Location from './Location.vue'
   import { onMounted } from 'vue'
 
   const path = require('path')

@@ -10,6 +10,7 @@
   "files": [
     "dist"
   ],
+  extraFiles: ['./db'],
   "mac": {
     "artifactName": "${productName}_${version}.${ext}",
     "target": [

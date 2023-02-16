@@ -166,12 +166,29 @@
       let data1 = fs.readFileSync(files.value[0]['filePath']).toString()
       data1 = data1.replaceAll('\n', ',')
       let arr1 = data1.split(',')
-      let data2 = fs.readFileSync(files.value[0]['filePath']).toString()
+      let m1 = new Map()
+      for (let i = 0; i < arr1.length; i++) {
+        m1.set(arr1[i], true)
+      }
+      let data2 = fs.readFileSync(files.value[1]['filePath']).toString()
       data2 = data2.replaceAll('\n', ',')
       let arr2 = data2.split(',')
-      let intersect = arr1.filter(v => arr2.includes(v))
-      let minus1 = arr1.filter(v => !arr2.includes(v))
-      let minus2 = arr2.filter(v => !arr1.includes(v))
+      let m2 = new Map()
+      for (let i = 0; i < arr2.length; i++) {
+        m2.set(arr2[i],true)
+      }
+      let intersect = []
+      let minus1 = []
+      for (let key of m1.keys()) {
+        if (m2.has(key)) {
+          intersect.push(key)
+          m2.delete(key)
+        } else {
+          minus1.push(key)
+        }
+      }
+
+      let minus2 = [...m2.keys()]
       const timestamp = getTimestamp()
 
       write(path.join(<string>props.dir, timestamp + '交集.txt'), intersect.join('\n'))
